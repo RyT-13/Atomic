@@ -11,20 +11,22 @@ namespace Objects
         public AtomicVariable<Vector3> moveDirection;
         public AtomicValue<float> lifetime;
         public AtomicValue<int> damage;
-        
+        public AtomicVariable<float> currentLifetime;
+
         [SerializeField] private Rigidbody _rigidbody;
-        
+
         private MovementMechanics _movementMechanics;
         private LifetimeMechanics _lifetimeMechanics;
-        private DealDamageMechanics _dealDamageMechanics;
+        
+        [SerializeField] private DealDamageAction _dealDamageAction;
 
         private void Awake()
         {
+            _dealDamageAction.Compose(damage);
             _movementMechanics = new MovementMechanics(_rigidbody, moveSpeed, moveDirection);
-            _lifetimeMechanics = new LifetimeMechanics(gameObject, lifetime);
-            _dealDamageMechanics = new DealDamageMechanics(damage);
+            _lifetimeMechanics = new LifetimeMechanics(gameObject, lifetime, currentLifetime);
         }
-        
+
         private void FixedUpdate()
         {
             _movementMechanics.FixedUpdate();
@@ -39,7 +41,7 @@ namespace Objects
         {
             if (other.gameObject.TryGetComponent(out IDamageable target))
             {
-                _dealDamageMechanics.DealDamage(target);
+                _dealDamageAction.Invoke(target);
                 MonoHelper.DestroyGO(gameObject);
             }
         }

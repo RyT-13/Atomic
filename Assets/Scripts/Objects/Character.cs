@@ -7,7 +7,7 @@ namespace Objects
     public class Character : MonoBehaviour, IDamageable
     {
         public AtomicVariable<int> health;
-    
+
         public AtomicValue<float> moveSpeed;
         public AtomicVariable<Vector3> moveDirection;
 
@@ -16,17 +16,18 @@ namespace Objects
         [SerializeField] private Transform _shootingPoint;
 
         private MovementMechanics _movementMechanics;
-        [SerializeField]
-        private TakeDamageMechanics _takeDamageMechanics;
         private DeathMechanics _deathMechanics;
-        private ShootingMechanics _shootingMechanics;
+
+        [SerializeField] private TakeDamageAction _takeDamageAction;
+        [SerializeField] private ShootBulletAction _shootBulletAction;
 
         private void Awake()
         {
+            _takeDamageAction.Compose(health);
+            _shootBulletAction.Compose(_bulletPref);
+
             _movementMechanics = new MovementMechanics(_rigidbody, moveSpeed, moveDirection);
-            _takeDamageMechanics = new TakeDamageMechanics(health);
             _deathMechanics = new DeathMechanics(gameObject, health);
-            _shootingMechanics = new ShootingMechanics(_bulletPref);
         }
 
         private void OnEnable()
@@ -51,12 +52,12 @@ namespace Objects
 
         public void TakeDamage(int damage)
         {
-            _takeDamageMechanics.TakeDamage(damage);
+            _takeDamageAction.Invoke(damage);
         }
 
         public void Shoot()
         {
-            _shootingMechanics.Shoot(_shootingPoint);
+            _shootBulletAction.Invoke(_shootingPoint);
         }
     }
 }

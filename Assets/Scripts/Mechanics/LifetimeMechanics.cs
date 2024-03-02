@@ -8,20 +8,21 @@ namespace Mechanics
     {
         private readonly GameObject _destructibleObject;
         private readonly IAtomicValue<float> _lifetime;
-        
-        private float _timer = 0;
+        private readonly IAtomicVariable<float> _currentTime;
 
-        public LifetimeMechanics(GameObject destructibleObject, IAtomicValue<float> lifetime)
+        public LifetimeMechanics(GameObject destructibleObject, IAtomicValue<float> lifetime,
+            IAtomicVariable<float> currentTime)
         {
             _destructibleObject = destructibleObject;
             _lifetime = lifetime;
+            _currentTime = currentTime;
         }
 
         public void Update()
         {
-            _timer += Time.deltaTime;
+            _currentTime.Value += Time.deltaTime;
 
-            if (_timer >= _lifetime.Value)
+            if (_currentTime.Value >= _lifetime.Value)
             {
                 MonoHelper.DestroyGO(_destructibleObject);
             }

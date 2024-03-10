@@ -23,7 +23,7 @@ namespace Objects
         private void Awake()
         {
             _dealDamageAction.Compose(damage);
-            _movementMechanics = new MovementMechanics(_rigidbody, moveSpeed, moveDirection);
+            _movementMechanics = new MovementMechanics(_rigidbody, new AtomicValue<bool>(true), moveSpeed, moveDirection);
             _lifetimeMechanics = new LifetimeMechanics(gameObject, lifetime, currentLifetime);
         }
 

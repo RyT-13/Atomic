@@ -1,4 +1,5 @@
 ﻿using Atomic.Elements;
+using Components;
 using Mechanics;
 using UnityEngine;
 
@@ -6,58 +7,67 @@ namespace Objects
 {
     public class Character : MonoBehaviour, IDamageable
     {
-        public AtomicVariable<int> health;
+        [SerializeField] private HealthComponent _healthComponent;
+        [SerializeField] private MoveComponent _moveComponent;
+        [SerializeField] private ShootingComponent _shootingComponent;
 
-        public AtomicValue<float> moveSpeed;
-        public AtomicVariable<Vector3> moveDirection;
+        [SerializeField] private AtomicFunction<bool> _isIdle;
 
-        [SerializeField] private Rigidbody _rigidbody;
-        [SerializeField] private Bullet _bulletPref;
-        [SerializeField] private Transform _shootingPoint;
+        private RotateMechanics _rotateMechanics;
 
-        private MovementMechanics _movementMechanics;
-        private DeathMechanics _deathMechanics;
-
-        [SerializeField] private TakeDamageAction _takeDamageAction;
-        [SerializeField] private ShootBulletAction _shootBulletAction;
+        public IAtomicValue<bool> IsIdle => _isIdle;
+        public IAtomicValue<bool> IsMoving => _moveComponent.IsMoving;
+        public IAtomicObservable DeathEvent => _healthComponent.DeathEvent;
+        public IAtomicObservable ShootEvent => _shootingComponent.ShootEvent;
 
         private void Awake()
         {
-            _takeDamageAction.Compose(health);
-            _shootBulletAction.Compose(_bulletPref);
+            _healthComponent.Compose(gameObject);
+            _moveComponent.Compose();
+            _shootingComponent.Compose();
 
-            _movementMechanics = new MovementMechanics(_rigidbody, moveSpeed, moveDirection);
-            _deathMechanics = new DeathMechanics(gameObject, health);
+            _isIdle.Compose(() => _moveComponent.IsMoving.Value == false && _healthComponent.IsAlive.Value);
+            _moveComponent.MoveEnabled.Append(_healthComponent.IsAlive);
+            _shootingComponent.ShootEnabled.Append(_healthComponent.IsAlive);
+            _shootingComponent.ShootEnabled.Append(
+                new AtomicFunction<bool>(() => _moveComponent.IsMoving.Value == false));
+
+            _rotateMechanics = new RotateMechanics(_moveComponent.MoveDirection, transform, _moveComponent.MoveEnabled);
         }
 
         private void OnEnable()
         {
-            _deathMechanics.OnEnable();
+            _healthComponent.OnEnable();
         }
 
         private void OnDisable()
         {
-            _deathMechanics.OnDisable();
+            _healthComponent.OnDisable();
         }
 
         private void FixedUpdate()
         {
-            _movementMechanics.FixedUpdate();
+            _moveComponent.FixedUpdate();
+        }
+
+        private void Update()
+        {
+            _rotateMechanics.Update();
         }
 
         public void Move(Vector3 direction)
         {
-            moveDirection.Value = direction;
+            _moveComponent.MoveDirection.Value = direction;
         }
 
         public void TakeDamage(int damage)
         {
-            _takeDamageAction.Invoke(damage);
+            _healthComponent.TakeDamageAction.Invoke(damage);
         }
 
         public void Shoot()
         {
-            _shootBulletAction.Invoke(_shootingPoint);
+            _shootingComponent.ShootBulletAction.Invoke();
         }
     }
 }

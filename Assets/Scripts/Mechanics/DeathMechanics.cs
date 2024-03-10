@@ -1,6 +1,5 @@
 ﻿using Atomic.Elements;
 using UnityEngine;
-using Utils;
 
 namespace Mechanics
 {
@@ -8,11 +7,12 @@ namespace Mechanics
     {
         private readonly GameObject _dyingObject;
         private readonly IAtomicObservable<int> _heals;
+        private readonly IAtomicEvent _deathEvent;
 
-        public DeathMechanics(GameObject dyingObject, IAtomicObservable<int> heals)
+        public DeathMechanics(IAtomicObservable<int> heals, IAtomicEvent deathEvent)
         {
             _heals = heals;
-            _dyingObject = dyingObject;
+            _deathEvent = deathEvent;
         }
 
         public void OnEnable()
@@ -29,7 +29,7 @@ namespace Mechanics
         {
             if (heals <= 0)
             {
-                MonoHelper.DestroyGO(_dyingObject);
+                _deathEvent?.Invoke();
             }
         }
     }
